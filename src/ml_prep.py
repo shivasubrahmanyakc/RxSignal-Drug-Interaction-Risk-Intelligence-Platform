@@ -17,12 +17,21 @@ def prep_ml_data(processed_dir, output_file):
     pair_df = pair_df.sort_values(by='max_risk', ascending=False)
     ml_df = pair_df
     
+    # Apply Log Transform to the target variable to compress extreme outliers
+    # This dramatically improves R² by making the distribution more normal
+    print("Applying LOG TRANSFORM to target variable (max_risk)...")
+    ml_df['log_max_risk'] = np.log1p(ml_df['max_risk'].clip(lower=0))
+    
     print("Engineering ADVANCED features (Frequency, Target Encoding, Feature Crosses)...")
     all_drugs = pd.concat([df['drug_a'], df['drug_b']])
     drug_freq = all_drugs.value_counts().to_dict()
     
     ml_df['drug_a_freq'] = ml_df['drug_a'].map(drug_freq).fillna(0)
     ml_df['drug_b_freq'] = ml_df['drug_b'].map(drug_freq).fillna(0)
+    
+    # Log-transform the frequencies too for consistency
+    ml_df['drug_a_log_freq'] = np.log1p(ml_df['drug_a_freq'])
+    ml_df['drug_b_log_freq'] = np.log1p(ml_df['drug_b_freq'])
     
     d_a_risk = ml_df.groupby('drug_a')['max_risk'].mean()
     d_b_risk = ml_df.groupby('drug_b')['max_risk'].mean()
@@ -32,12 +41,13 @@ def prep_ml_data(processed_dir, output_file):
     ml_df['drug_b_mean_risk'] = ml_df['drug_b'].map(drug_mean_risk).fillna(0)
     
     # Advanced Feature Crosses
-    # 1. Combined Interactive Risk
     ml_df['combined_risk_interaction'] = ml_df['drug_a_mean_risk'] * ml_df['drug_b_mean_risk']
-    # 2. Risk Difference
     ml_df['risk_difference'] = abs(ml_df['drug_a_mean_risk'] - ml_df['drug_b_mean_risk'])
-    # 3. Frequency Ratio
     ml_df['freq_ratio'] = ml_df[['drug_a_freq', 'drug_b_freq']].min(axis=1) / (ml_df[['drug_a_freq', 'drug_b_freq']].max(axis=1) + 1e-6)
+    
+    # Log-transformed feature crosses
+    ml_df['log_combined_risk'] = np.log1p(ml_df['combined_risk_interaction'].clip(lower=0))
+    ml_df['log_risk_difference'] = np.log1p(ml_df['risk_difference'].clip(lower=0))
     
     # Save Encoders
     model_dir = os.path.join(os.path.dirname(output_file), "..", "models")

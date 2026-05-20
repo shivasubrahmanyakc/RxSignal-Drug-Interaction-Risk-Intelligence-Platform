@@ -1,5 +1,7 @@
 import os
+import math
 import joblib
+import numpy as np
 import pandas as pd
 import torch
 import torch.nn.functional as F
@@ -95,16 +97,28 @@ async def get_drugs():
 async def predict_risk(request: PredictionRequest):
     d_a, d_b = sorted([request.drug_a.upper().strip(), request.drug_b.upper().strip()])
     
-    # 1. Phase 2 XGBoost Prediction
+    # 1. Phase 2 XGBoost Prediction (Log-Transform model)
     xgb_score = 0
     if ml_model and encoders:
+        d_a_freq = encoders['freq'].get(d_a, 0)
+        d_b_freq = encoders['freq'].get(d_b, 0)
+        d_a_mean_risk = encoders['mean_risk'].get(d_a, 0)
+        d_b_mean_risk = encoders['mean_risk'].get(d_b, 0)
         features = pd.DataFrame([{
-            'drug_a_freq': encoders['freq'].get(d_a, 0),
-            'drug_b_freq': encoders['freq'].get(d_b, 0),
-            'drug_a_mean_risk': encoders['mean_risk'].get(d_a, 0),
-            'drug_b_mean_risk': encoders['mean_risk'].get(d_b, 0)
+            'drug_a_freq': d_a_freq,
+            'drug_b_freq': d_b_freq,
+            'drug_a_mean_risk': d_a_mean_risk,
+            'drug_b_mean_risk': d_b_mean_risk,
+            'combined_risk_interaction': d_a_mean_risk * d_b_mean_risk,
+            'risk_difference': abs(d_a_mean_risk - d_b_mean_risk),
+            'freq_ratio': min(d_a_freq, d_b_freq) / (max(d_a_freq, d_b_freq) + 1e-6),
+            'drug_a_log_freq': np.log1p(d_a_freq),
+            'drug_b_log_freq': np.log1p(d_b_freq),
+            'log_combined_risk': np.log1p(max(0, d_a_mean_risk * d_b_mean_risk)),
+            'log_risk_difference': np.log1p(abs(d_a_mean_risk - d_b_mean_risk)),
         }])
-        xgb_score = float(ml_model.predict(features)[0])
+        # Model predicts in log space, expm1 converts back to original scale
+        xgb_score = float(np.expm1(ml_model.predict(features)[0]))
         
     xgb_label = "HIGH RISK" if xgb_score > 10 else "MEDIUM RISK" if xgb_score > 5 else "LOW RISK"
     
@@ -119,7 +133,9 @@ async def predict_risk(request: PredictionRequest):
                 z_a = gnn_node_embeddings[idx_a].unsqueeze(0)
                 z_b = gnn_node_embeddings[idx_b].unsqueeze(0)
                 with torch.no_grad():
-                    gnn_score = float(gnn_decoder.decode_from_embeddings(z_a, z_b))
+                    # Model predicts in log space, expm1 converts back
+                    log_pred = float(gnn_decoder.decode_from_embeddings(z_a, z_b))
+                    gnn_score = float(np.expm1(log_pred))
                 gnn_label = "HIGH RISK" if gnn_score > 10 else "MEDIUM RISK" if gnn_score > 5 else "LOW RISK"
         except Exception as e:
             print(f"GNN Inference Error: {e}")
