@@ -244,14 +244,14 @@ if drug1 and drug2:
                     pred_label = "HIGH RISK" if pred_risk > 10 else "MEDIUM RISK" if pred_risk > 5 else "LOW RISK"
                     
                     st.markdown(f"""
-                    <div class="glass-container" style="border-left: 4px solid #8b5cf6;">
-                        <h3 style="color: #8b5cf6;">AI Predicted Risk Severity</h3>
-                        <p style="color: #94a3b8; margin-bottom: 20px;">The XGBoost model analyzes the historical baseline features and predicts the underlying biological risk score, learning to filter out purely statistical noise like small-sample coincidences.</p>
-                        
-                        <div class="metric-label">Predicted Severity Score</div>
-                        <div class="metric-value">{pred_risk:.2f}</div>
-                        <div style="margin-top: 15px;"><span class="{pred_class}">{pred_label}</span></div>
-                    </div>
-                    """, unsafe_allow_html=True)
+<div class="glass-container" style="border-left: 4px solid #8b5cf6;">
+    <h3 style="color: #8b5cf6;">AI Predicted Risk Severity</h3>
+    <p style="color: #94a3b8; margin-bottom: 20px;">The XGBoost model analyzes the historical baseline features and predicts the underlying biological risk score, learning to filter out purely statistical noise like small-sample coincidences.</p>
+    
+    <div class="metric-label">Predicted Severity Score</div>
+    <div class="metric-value">{pred_risk:.2f}</div>
+    <div style="margin-top: 15px;"><span class="{pred_class}">{pred_label}</span></div>
+</div>
+""", unsafe_allow_html=True)
                 else:
                     st.warning("ML Models not found. Please run the Phase 2 training pipeline (`python src/train_model.py`).")

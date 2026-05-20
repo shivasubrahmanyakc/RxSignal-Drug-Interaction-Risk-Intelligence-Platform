@@ -108,9 +108,12 @@ if __name__ == "__main__":
     base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
     out_dir = os.path.join(base_dir, "processed")
     
-    # We will just do Q1 for MVP testing
+    # Process all 4 quarters
     quarters = [
-        "faers_ascii_2025q1"
+        "faers_ascii_2025q1",
+        "faers_ascii_2025q2",
+        "faers_ascii_2025q3",
+        "faers_ascii_2025Q4"
     ]
     
     for q in quarters:

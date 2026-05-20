@@ -48,7 +48,9 @@ def calculate_stats_duckdb(processed_dir, output_file):
     
     print("Executing aggregation query (this may take a few minutes)...")
     # Execute query and pull results into pandas (the aggregated result is small enough for memory)
-    df = duckdb.query(query).df()
+    conn = duckdb.connect()
+    conn.execute("PRAGMA temp_directory='Y:/.duckdb_tmp';")
+    df = conn.query(query).df()
     
     print(f"Aggregation complete. Processed {len(df)} significant pairs. Calculating PRR/ROR...")
     

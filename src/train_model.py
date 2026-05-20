@@ -31,12 +31,18 @@ def train_xgboost(data_file, model_file):
     model.fit(X_train, y_train, eval_set=[(X_test, y_test)], verbose=50)
     
     print("\nEvaluating model...")
-    y_pred = model.predict(X_test)
-    mse = mean_squared_error(y_test, y_pred)
-    r2 = r2_score(y_test, y_pred)
+    # Training Metrics
+    y_train_pred = model.predict(X_train)
+    train_mse = mean_squared_error(y_train, y_train_pred)
+    train_r2 = r2_score(y_train, y_train_pred)
     
-    print(f"Test MSE: {mse:.4f}")
-    print(f"Test R2 Score: {r2:.4f}")
+    # Test Metrics
+    y_test_pred = model.predict(X_test)
+    test_mse = mean_squared_error(y_test, y_test_pred)
+    test_r2 = r2_score(y_test, y_test_pred)
+    
+    print(f"Train MSE: {train_mse:.4f} | Train R2 Score: {train_r2:.4f}")
+    print(f"Test MSE:  {test_mse:.4f} | Test R2 Score:  {test_r2:.4f}")
     
     print(f"Saving model to {model_file}...")
     joblib.dump(model, model_file)
