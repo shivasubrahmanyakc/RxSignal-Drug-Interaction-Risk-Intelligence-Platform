@@ -1,33 +1,48 @@
 @import "tailwindcss";
 
+/* ── Tailwind v4: theme config lives here ── */
+@theme {
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+
+  /* extend border-radius */
+  --radius-2xl: 1rem;
+  --radius-3xl: 1.5rem;
+  --radius-4xl: 2rem;
+
+  /* custom box-shadows */
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.04), 0 8px 24px rgba(0,0,0,0.06);
+  --shadow-card-hover: 0 4px 12px rgba(0,0,0,0.08), 0 16px 40px rgba(0,0,0,0.08);
+  --shadow-blue: 0 8px 32px rgba(37,99,235,0.25);
+  --shadow-dark: 0 20px 60px rgba(15,23,42,0.4);
+
+  /* custom animations */
+  --animate-fade-in: fadeIn 0.4s ease-out;
+  --animate-slide-up: slideUp 0.4s ease-out;
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+}
+
 @layer base {
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body, #root { height: 100%; margin: 0; padding: 0; }
   body {
-    @apply bg-slate-50 text-slate-800 antialiased min-h-screen;
-    background-image: radial-gradient(circle at top right, rgba(99, 102, 241, 0.1), transparent 40%),
-                      radial-gradient(circle at bottom left, rgba(20, 184, 166, 0.1), transparent 40%);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background-color: #f1f5f9;
+    color: #1e293b;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 }
 
-@layer components {
-  .glass-card {
-    @apply bg-white/80 backdrop-blur-md border border-slate-200/50 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-6 transition-all duration-300 hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] hover:border-indigo-300;
-  }
-  
-  .glass-input {
-    @apply w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 transition-all shadow-sm;
-  }
-  
-  .btn-primary {
-    @apply bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-3 px-6 rounded-xl shadow-md shadow-indigo-500/20 transition-all duration-200 transform hover:-translate-y-0.5 active:translate-y-0;
-  }
-
-  .risk-badge-high {
-    @apply bg-rose-50 text-rose-600 border border-rose-200 px-3 py-1 rounded-full font-bold text-sm uppercase shadow-sm;
-  }
-  .risk-badge-medium {
-    @apply bg-amber-50 text-amber-600 border border-amber-200 px-3 py-1 rounded-full font-bold text-sm uppercase shadow-sm;
-  }
-  .risk-badge-low {
-    @apply bg-emerald-50 text-emerald-600 border border-emerald-200 px-3 py-1 rounded-full font-bold text-sm uppercase shadow-sm;
-  }
-}
+/* ── custom scrollbar for drug dropdown ── */
+.custom-scroll::-webkit-scrollbar { width: 4px; }
+.custom-scroll::-webkit-scrollbar-track { background: transparent; }
+.custom-scroll::-webkit-scrollbar-thumb { background: rgba(148,163,184,0.3); border-radius: 99px; }
+.custom-scroll::-webkit-scrollbar-thumb:hover { background: rgba(148,163,184,0.5); }

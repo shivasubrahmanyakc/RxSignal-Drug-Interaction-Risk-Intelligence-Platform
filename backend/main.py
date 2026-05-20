@@ -15,7 +15,7 @@ app = FastAPI(title="FAERS Intelligence Backend")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -91,7 +91,7 @@ async def get_drugs():
     if not encoders:
         raise HTTPException(status_code=500, detail="Models not loaded")
     all_drugs = list(encoders['freq'].keys())
-    return {"drugs": sorted(all_drugs[:1000])}
+    return {"drugs": sorted(all_drugs)}
 
 @app.post("/api/predict")
 async def predict_risk(request: PredictionRequest):
@@ -119,6 +119,14 @@ async def predict_risk(request: PredictionRequest):
         }])
         # Model predicts in log space, expm1 converts back to original scale
         xgb_score = float(np.expm1(ml_model.predict(features)[0]))
+        
+        feature_drivers = [
+            {"name": "Freq Ratio", "value": round(float(features.iloc[0]['freq_ratio']), 2), "normalized": min(1.0, float(features.iloc[0]['freq_ratio']))},
+            {"name": "Comb Risk", "value": round(float(features.iloc[0]['combined_risk_interaction']), 2), "normalized": min(1.0, float(features.iloc[0]['combined_risk_interaction']) / 100.0)},
+            {"name": "Risk Diff", "value": round(float(features.iloc[0]['risk_difference']), 2), "normalized": min(1.0, float(features.iloc[0]['risk_difference']) / 50.0)},
+        ]
+    else:
+        feature_drivers = []
         
     xgb_label = "HIGH RISK" if xgb_score > 10 else "MEDIUM RISK" if xgb_score > 5 else "LOW RISK"
     
@@ -162,7 +170,8 @@ async def predict_risk(request: PredictionRequest):
         "drug_b": d_b,
         "phase2_xgb": {
             "score": round(xgb_score, 2),
-            "label": xgb_label
+            "label": xgb_label,
+            "feature_drivers": feature_drivers
         },
         "phase3_gnn": {
             "score": round(gnn_score, 2),
