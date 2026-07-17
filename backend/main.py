@@ -160,7 +160,7 @@ async def predict_risk(request: PredictionRequest):
     
     try:
         conn = duckdb.connect()
-        conn.execute("PRAGMA temp_directory='Y:/.duckdb_tmp';")
+        conn.execute("PRAGMA temp_directory='C:/.duckdb_tmp';")
         evidence = conn.query(query).df().to_dict(orient="records")
     except Exception as e:
         evidence = []
