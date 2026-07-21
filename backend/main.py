@@ -191,6 +191,8 @@ async def predict_risk(request: PredictionRequest):
 
     try:
         conn = duckdb.connect()
+        if parquet_file.startswith("http"):
+            conn.execute("SET allow_asterisks_in_http_paths = true;")
         evidence = conn.query(query).df().to_dict(orient="records")
     except Exception as e:
         print(f"DuckDB error: {e}")
