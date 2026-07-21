@@ -70,7 +70,7 @@ const SemiGauge = ({ score }) => {
 };
 
 /* ─── Virtual DrugSelect ───────────────────────────── */
-const ITEM_H=36, WIN_SIZE=12;
+const ITEM_H=44, WIN_SIZE=10;
 const DrugSelect = ({ drugs, value, onChange, placeholder, icon }) => {
   const [open,setOpen]         = useState(false);
   const [query,setQuery]       = useState('');
@@ -100,40 +100,41 @@ const DrugSelect = ({ drugs, value, onChange, placeholder, icon }) => {
   const handleOpen=()=>{ if(triggerRef.current) setRect(triggerRef.current.getBoundingClientRect()); setOpen(o=>!o); setQuery(''); setScrollTop(0); };
   const handleSelect=d=>{ onChange(d); setOpen(false); setQuery(''); };
   const handleClear=e=>{ e.stopPropagation(); onChange(''); setQuery(''); };
-  const panelStyle=rect?{ position:'fixed',top:rect.bottom+4,left:rect.left,width:Math.max(rect.width,260),zIndex:99999 }:{};
+  const panelStyle=rect?{ position:'fixed',top:rect.bottom+6,left:rect.left,width:Math.max(rect.width,360),zIndex:99999 }:{};
 
   return (
     <div className="relative">
       <button ref={triggerRef} type="button" onClick={handleOpen}
-        className={`w-full flex items-center gap-2 pl-9 pr-3 py-3 bg-white border rounded-xl text-sm font-bold transition-all text-left shadow-sm ${open?'border-blue-400 bg-slate-100':'border-slate-200 hover:border-blue-300 hover:bg-slate-100'}`}>
-        <span className="material-symbols-outlined absolute left-3 top-3 text-slate-900 text-[18px]">{icon}</span>
-        <span className={value?'text-slate-800 flex-1 truncate':'text-slate-400 flex-1'}>{value||placeholder}</span>
+        className={`w-full flex items-center gap-2 pl-9 pr-3 py-3 bg-white border rounded-xl text-sm font-bold transition-all text-left shadow-sm ${open?'border-blue-500 ring-2 ring-blue-500/20 bg-white':'border-slate-200 hover:border-blue-300 hover:bg-slate-50'}`}>
+        <span className="material-symbols-outlined absolute left-3 top-3 text-slate-500 text-[20px]">{icon}</span>
+        <span className={value?'text-slate-800 flex-1 truncate font-semibold':'text-slate-400 flex-1'}>{value||placeholder}</span>
         {value
-          ? <span onClick={handleClear} className="material-symbols-outlined text-[16px] text-slate-900 hover:text-red-500 transition-colors flex-shrink-0">close</span>
-          : <span className={`material-symbols-outlined text-[16px] text-slate-400 flex-shrink-0 transition-transform duration-200 ${open?'rotate-180':''}`}>expand_more</span>}
+          ? <span onClick={handleClear} className="material-symbols-outlined text-[18px] text-slate-400 hover:text-red-500 transition-colors flex-shrink-0">close</span>
+          : <span className={`material-symbols-outlined text-[20px] text-slate-400 flex-shrink-0 transition-transform duration-200 ${open?'rotate-180':''}`}>expand_more</span>}
       </button>
       {open && ReactDOM.createPortal(
-        <div id="drug-portal-panel" style={panelStyle} className="bg-slate-900 border border-slate-700 rounded-xl shadow-2xl overflow-hidden flex flex-col">
-          <div className="p-2 border-b border-white/10 flex-shrink-0">
+        <div id="drug-portal-panel" style={panelStyle} className="bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden flex flex-col">
+          <div className="p-3 border-b border-slate-100 bg-slate-50 flex-shrink-0">
             <div className="relative">
-              <span className="material-symbols-outlined absolute left-2.5 top-[7px] text-slate-900 text-[15px]">search</span>
+              <span className="material-symbols-outlined absolute left-3 top-2.5 text-slate-400 text-[18px]">search</span>
               <input autoFocus type="text" value={query} onChange={e=>setQuery(e.target.value)}
                 placeholder={`Search ${drugs.length.toLocaleString()} drugs…`}
-                className="w-full pl-8 pr-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-white placeholder-blue-300/40 text-xs font-medium focus:outline-none focus:border-blue-400"/>
+                className="w-full pl-9 pr-3 py-2 bg-white border border-slate-200 rounded-lg text-slate-800 placeholder-slate-400 text-sm font-medium focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"/>
             </div>
           </div>
-          <div className="px-3 py-[5px] border-b border-white/5 flex-shrink-0">
-            <span className="text-[10px] font-semibold text-blue-300/50">{filtered.length.toLocaleString()} {query?`match${filtered.length!==1?'es':''}` :'drugs total'}</span>
+          <div className="px-4 py-2 bg-slate-50/50 border-b border-slate-100 flex-shrink-0">
+            <span className="text-xs font-semibold text-slate-500">{filtered.length.toLocaleString()} {query?`match${filtered.length!==1?'es':''}` :'drugs total'}</span>
           </div>
           {filtered.length===0
-            ? <p className="text-center text-blue-300/40 text-xs py-5">No matches found</p>
+            ? <p className="text-center text-slate-400 text-sm py-6">No matches found</p>
             : <div ref={listRef} onScroll={e=>setScrollTop(e.currentTarget.scrollTop)} style={{ height:viewH,overflowY:'auto' }} className="custom-scroll relative flex-shrink-0">
                 <div style={{ height:totalH,position:'relative' }}>
                   {visible.map((d,i)=>{
                     const top=(startIdx+i)*ITEM_H;
+                    const isSelected = d === value;
                     return <button key={d} type="button" onClick={()=>handleSelect(d)}
                       style={{ position:'absolute',top,left:0,right:0,height:ITEM_H }}
-                      className={`flex items-center px-4 text-sm font-medium transition-colors text-left ${d===value?'bg-blue-600 text-white':'text-blue-100 hover:bg-white/10'}`}>{d}</button>;
+                      className={`flex items-center px-4 text-sm font-medium transition-colors text-left ${isSelected?'bg-blue-50 text-blue-600 font-semibold':'text-slate-700 hover:bg-slate-100'}`}>{d}</button>;
                   })}
                 </div>
               </div>}
@@ -1097,19 +1098,19 @@ export default function App() {
         {/* Drug input banner — always visible */}
         <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-slate-100 relative overflow-hidden">
           <div className="pointer-events-none absolute -top-40 -right-20 w-96 h-96 bg-slate-100 rounded-full blur-3xl"></div>
-          <div className="relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
-            <div>
+          <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+            <div className="lg:col-span-4">
               <div className="flex items-center gap-2 mb-3">
                 <span className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-600 bg-slate-100 px-3 py-1 rounded-full">AI Risk Engine</span>
               </div>
               <h1 className="text-2xl md:text-3xl font-black text-slate-800 leading-tight mb-2">Drug Interaction<br/>Risk Assessment</h1>
-              <p className="text-sm text-slate-500 font-medium leading-relaxed max-w-sm">
+              <p className="text-sm text-slate-500 font-medium leading-relaxed">
                 Powered by XGBoost + PyTorch GNN trained on <span className="text-slate-700 font-bold">1.06B FAERS records</span>. Select two drugs to generate full pharmacovigilance insights.
               </p>
             </div>
-            <form onSubmit={handlePredict}>
+            <form onSubmit={handlePredict} className="lg:col-span-8">
               {error && <div className="mb-4 bg-slate-100 border border-red-200 text-red-600 text-sm rounded-xl px-4 py-2">{error}</div>}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-5">
                 <div>
                   <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Drug A</label>
                   <DrugSelect drugs={drugs} value={drugA} onChange={setDrugA} placeholder="e.g. Aspirin" icon="medication"/>
