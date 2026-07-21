@@ -156,29 +156,26 @@ async def predict_risk(request: PredictionRequest):
 
     parquet_full = os.path.join(processed_dir, "aggregated_stats.parquet").replace("\\", "/")
     parquet_sample = os.path.join(processed_dir, "aggregated_stats_sample.parquet").replace("\\", "/")
-    hf_cached = "/tmp/aggregated_stats_hf.parquet"
 
     if hf_dataset_url and hf_token:
-        if not os.path.exists(hf_cached):
-            try:
-                print("Downloading HF parquet (first time, ~1.1 GB)...")
-                resp = requests.get(
-                    hf_dataset_url,
-                    headers={"Authorization": f"Bearer {hf_token}"},
-                    timeout=300,
-                    stream=True,
-                )
-                resp.raise_for_status()
-                with open(hf_cached, "wb") as f:
-                    for chunk in resp.iter_content(chunk_size=4 * 1024 * 1024):
-                        f.write(chunk)
-                print(f"Saved HF parquet to {hf_cached}")
-            except Exception as dl_err:
-                print(f"HF download error: {dl_err}")
-                hf_cached = None
-        parquet_file = hf_cached if hf_cached and os.path.exists(hf_cached) else (
-            parquet_full if os.path.exists(parquet_full) else parquet_sample
-        )
+        try:
+            # Follow the HuggingFace redirect to get a temporary pre-signed S3 URL.
+            # DuckDB queries this directly — no full download, no disk space used.
+            resp = requests.get(
+                hf_dataset_url,
+                headers={"Authorization": f"Bearer {hf_token}"},
+                allow_redirects=False,
+                timeout=15,
+            )
+            presigned_url = resp.headers.get("location", "")
+            if presigned_url:
+                parquet_file = presigned_url
+                print(f"HF presigned URL obtained (len={len(presigned_url)})")
+            else:
+                raise ValueError("No redirect location returned from HuggingFace")
+        except Exception as hf_err:
+            print(f"HF presigned URL error: {hf_err}")
+            parquet_file = parquet_full if os.path.exists(parquet_full) else parquet_sample
     elif os.path.exists(parquet_full):
         parquet_file = parquet_full
     else:
