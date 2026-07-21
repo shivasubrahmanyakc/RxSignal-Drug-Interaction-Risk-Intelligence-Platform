@@ -1,6 +1,8 @@
 import os
 import math
 import joblib
+import tempfile
+import requests
 import numpy as np
 import pandas as pd
 import torch
@@ -149,36 +151,54 @@ async def predict_risk(request: PredictionRequest):
             print(f"GNN Inference Error: {e}")
     
     # 3. Phase 1 Historical Evidence
-    hf_dataset_url = os.environ.get("HF_DATASET_URL")
-    hf_token = os.environ.get("HF_TOKEN")
-    
+    hf_dataset_url = os.environ.get("HF_DATASET_URL", "").replace("/blob/", "/resolve/")
+    hf_token = os.environ.get("HF_TOKEN", "")
+
     parquet_full = os.path.join(processed_dir, "aggregated_stats.parquet").replace("\\", "/")
     parquet_sample = os.path.join(processed_dir, "aggregated_stats_sample.parquet").replace("\\", "/")
-    
-    if hf_dataset_url:
-        parquet_file = hf_dataset_url
+    hf_cached = "/tmp/aggregated_stats_hf.parquet"
+
+    if hf_dataset_url and hf_token:
+        if not os.path.exists(hf_cached):
+            try:
+                print("Downloading HF parquet (first time, ~1.1 GB)...")
+                resp = requests.get(
+                    hf_dataset_url,
+                    headers={"Authorization": f"Bearer {hf_token}"},
+                    timeout=300,
+                    stream=True,
+                )
+                resp.raise_for_status()
+                with open(hf_cached, "wb") as f:
+                    for chunk in resp.iter_content(chunk_size=4 * 1024 * 1024):
+                        f.write(chunk)
+                print(f"Saved HF parquet to {hf_cached}")
+            except Exception as dl_err:
+                print(f"HF download error: {dl_err}")
+                hf_cached = None
+        parquet_file = hf_cached if hf_cached and os.path.exists(hf_cached) else (
+            parquet_full if os.path.exists(parquet_full) else parquet_sample
+        )
     elif os.path.exists(parquet_full):
         parquet_file = parquet_full
     else:
         parquet_file = parquet_sample
-    
+
     query = f"""
-        SELECT event, a as co_occurrences, PRR, risk_score 
+        SELECT event, a as co_occurrences, PRR, risk_score
         FROM read_parquet('{parquet_file}')
         WHERE (drug_a = '{d_a}' AND drug_b = '{d_b}') OR (drug_a = '{d_b}' AND drug_b = '{d_a}')
         ORDER BY risk_score DESC
         LIMIT 10
     """
-    
+
     try:
         conn = duckdb.connect()
-        if hf_token and parquet_file.startswith("http"):
-            conn.execute(f"SET http_headers = {{'Authorization': 'Bearer {hf_token}'}};")
         evidence = conn.query(query).df().to_dict(orient="records")
     except Exception as e:
         print(f"DuckDB error: {e}")
         evidence = []
-        
+
     return {
         "drug_a": d_a,
         "drug_b": d_b,
