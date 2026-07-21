@@ -149,9 +149,18 @@ async def predict_risk(request: PredictionRequest):
             print(f"GNN Inference Error: {e}")
     
     # 3. Phase 1 Historical Evidence
+    hf_dataset_url = os.environ.get("HF_DATASET_URL")
+    hf_token = os.environ.get("HF_TOKEN")
+    
     parquet_full = os.path.join(processed_dir, "aggregated_stats.parquet").replace("\\", "/")
     parquet_sample = os.path.join(processed_dir, "aggregated_stats_sample.parquet").replace("\\", "/")
-    parquet_file = parquet_full if os.path.exists(parquet_full) else parquet_sample
+    
+    if hf_dataset_url:
+        parquet_file = hf_dataset_url
+    elif os.path.exists(parquet_full):
+        parquet_file = parquet_full
+    else:
+        parquet_file = parquet_sample
     
     query = f"""
         SELECT event, a as co_occurrences, PRR, risk_score 
@@ -163,10 +172,9 @@ async def predict_risk(request: PredictionRequest):
     
     try:
         conn = duckdb.connect()
-        if os.path.exists(parquet_file):
-            evidence = conn.query(query).df().to_dict(orient="records")
-        else:
-            evidence = []
+        if hf_token and parquet_file.startswith("http"):
+            conn.execute(f"SET http_headers = {{'Authorization': 'Bearer {hf_token}'}};")
+        evidence = conn.query(query).df().to_dict(orient="records")
     except Exception as e:
         print(f"DuckDB error: {e}")
         evidence = []
