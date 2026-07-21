@@ -8,6 +8,7 @@ faers_ascii_*/
 *.pdf
 *.zip
 *.pem
+*nginx.default*
 
 # Python
 __pycache__/
