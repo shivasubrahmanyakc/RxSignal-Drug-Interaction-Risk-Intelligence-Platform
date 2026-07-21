@@ -1037,7 +1037,7 @@ export default function App() {
   const [activeView,setActiveView] = useState('Dashboard');
 
   useEffect(() => {
-    fetch('http://localhost:8000/api/drugs')
+    fetch('/api/drugs')
       .then(r=>r.json())
       .then(d=>setDrugs(d.drugs||[]))
       .catch(console.error);
@@ -1049,7 +1049,7 @@ export default function App() {
     if (drugA===drugB) return setError('Please select two different drugs.');
     setError(null); setLoading(true); setResults(null);
     try {
-      const res = await fetch('http://localhost:8000/api/predict', {
+      const res = await fetch('/api/predict', {
         method:'POST', headers:{ 'Content-Type':'application/json' },
         body: JSON.stringify({ drug_a:drugA, drug_b:drugB }),
       });
