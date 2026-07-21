@@ -20,8 +20,7 @@ jobs:
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            set -e
-            cd /var/www/FAERS || cd ~/FAERS || cd /home/ubuntu/FAERS
+            if [ -d "/var/www/FAERS" ]; then cd /var/www/FAERS; elif [ -d "$HOME/FAERS" ]; then cd "$HOME/FAERS"; elif [ -d "/home/ubuntu/FAERS" ]; then cd /home/ubuntu/FAERS; else cd $(pwd); fi
             git fetch --all
             git reset --hard origin/main
             if [ -d "frontend" ]; then
@@ -29,6 +28,10 @@ jobs:
               npm install
               npm run build
               sudo rm -rf /var/www/html/*
-              sudo cp -r dist/* /var/www/html/ || sudo cp -r build/* /var/www/html/
+              if [ -d "dist" ]; then
+                sudo cp -r dist/* /var/www/html/
+              elif [ -d "build" ]; then
+                sudo cp -r build/* /var/www/html/
+              fi
             fi
             sudo systemctl restart nginx || sudo service nginx restart || true
