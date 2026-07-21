@@ -33,5 +33,8 @@ jobs:
               elif [ -d "build" ]; then
                 sudo cp -r build/* /var/www/html/
               fi
+              sudo chmod -R 755 /var/www/html
+              sudo chmod -R 644 /var/www/html/*
+              sudo chmod -R 755 /var/www/html/assets
             fi
             sudo systemctl restart nginx || sudo service nginx restart || true
