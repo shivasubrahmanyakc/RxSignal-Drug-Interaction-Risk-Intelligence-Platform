@@ -153,7 +153,7 @@ async def predict_risk(request: PredictionRequest):
     query = f"""
         SELECT event, a as co_occurrences, PRR, risk_score 
         FROM read_parquet('{parquet_file}')
-        WHERE drug_a = '{d_a}' AND drug_b = '{d_b}'
+        WHERE (drug_a = '{d_a}' AND drug_b = '{d_b}') OR (drug_a = '{d_b}' AND drug_b = '{d_a}')
         ORDER BY risk_score DESC
         LIMIT 10
     """
