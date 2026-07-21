@@ -149,7 +149,10 @@ async def predict_risk(request: PredictionRequest):
             print(f"GNN Inference Error: {e}")
     
     # 3. Phase 1 Historical Evidence
-    parquet_file = os.path.join(processed_dir, "aggregated_stats.parquet").replace("\\", "/")
+    parquet_full = os.path.join(processed_dir, "aggregated_stats.parquet").replace("\\", "/")
+    parquet_sample = os.path.join(processed_dir, "aggregated_stats_sample.parquet").replace("\\", "/")
+    parquet_file = parquet_full if os.path.exists(parquet_full) else parquet_sample
+    
     query = f"""
         SELECT event, a as co_occurrences, PRR, risk_score 
         FROM read_parquet('{parquet_file}')

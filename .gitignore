@@ -1,6 +1,7 @@
 # Data & Output Folders
 processed/*
 !processed/graph_drug_mapping.pkl
+!processed/aggregated_stats_sample.parquet
 faers_ascii_*/
 *.csv
 *.parquet
