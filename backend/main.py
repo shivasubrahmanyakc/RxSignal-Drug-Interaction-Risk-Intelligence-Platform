@@ -29,7 +29,10 @@ processed_dir = os.path.join(base_dir, "processed")
 # Global ML Objects
 ml_model = None
 encoders = None
-    
+
+# Cached drug list (populated on first /api/drugs call)
+_drug_list_cache = None
+
 # Global PyTorch GNN Objects
 gnn_node_embeddings = None
 gnn_drug_mapping = None
@@ -90,10 +93,42 @@ class PredictionRequest(BaseModel):
 
 @app.get("/api/drugs")
 async def get_drugs():
-    if not encoders:
-        raise HTTPException(status_code=500, detail="Models not loaded")
-    all_drugs = list(encoders['freq'].keys())
-    return {"drugs": sorted(all_drugs)}
+    global _drug_list_cache
+
+    # Return from in-memory cache if available
+    if _drug_list_cache is not None:
+        return {"drugs": _drug_list_cache}
+
+    # Try encoders dict first (fast, local)
+    if encoders and 'freq' in encoders:
+        _drug_list_cache = sorted(encoders['freq'].keys())
+        return {"drugs": _drug_list_cache}
+
+    # Fallback: read unique drug names from HF parquet via presigned URL
+    hf_dataset_url = os.environ.get("HF_DATASET_URL", "").replace("/blob/", "/resolve/")
+    hf_token = os.environ.get("HF_TOKEN", "")
+    if hf_dataset_url and hf_token:
+        try:
+            resp = requests.get(
+                hf_dataset_url,
+                headers={"Authorization": f"Bearer {hf_token}"},
+                allow_redirects=False,
+                timeout=15,
+            )
+            presigned_url = resp.headers.get("location", "")
+            if presigned_url:
+                conn = duckdb.connect()
+                conn.execute("SET allow_asterisks_in_http_paths = true;")
+                df = conn.execute(
+                    f"SELECT DISTINCT drug_a FROM read_parquet('{presigned_url}') "
+                    f"UNION SELECT DISTINCT drug_b FROM read_parquet('{presigned_url}') ORDER BY 1"
+                ).df()
+                _drug_list_cache = df.iloc[:, 0].dropna().tolist()
+                return {"drugs": _drug_list_cache}
+        except Exception as e:
+            print(f"Drug list fetch error: {e}")
+
+    return {"drugs": []}
 
 @app.post("/api/predict")
 async def predict_risk(request: PredictionRequest):
