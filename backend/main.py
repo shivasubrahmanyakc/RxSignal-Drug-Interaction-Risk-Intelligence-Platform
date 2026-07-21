@@ -27,7 +27,7 @@ processed_dir = os.path.join(base_dir, "processed")
 # Global ML Objects
 ml_model = None
 encoders = None
-
+    
 # Global PyTorch GNN Objects
 gnn_node_embeddings = None
 gnn_drug_mapping = None
