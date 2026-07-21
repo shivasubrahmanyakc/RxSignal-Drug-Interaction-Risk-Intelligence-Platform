@@ -26,5 +26,6 @@ jobs:
               cd frontend
               npm install
               npm run build
+              sudo cp -r dist/* /var/www/html/ || sudo cp -r build/* /var/www/html/ || true
             fi
             sudo systemctl reload nginx || sudo service nginx reload || true
