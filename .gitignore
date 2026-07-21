@@ -1,11 +1,13 @@
 # Data & Output Folders
-processed/
+processed/*
+!processed/graph_drug_mapping.pkl
 faers_ascii_*/
 *.csv
 *.parquet
 *.txt
 *.pdf
 *.zip
+*.pem
 
 # Python
 __pycache__/

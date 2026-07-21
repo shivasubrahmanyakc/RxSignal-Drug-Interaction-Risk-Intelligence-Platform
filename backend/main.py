@@ -160,9 +160,12 @@ async def predict_risk(request: PredictionRequest):
     
     try:
         conn = duckdb.connect()
-        conn.execute("PRAGMA temp_directory='C:/.duckdb_tmp';")
-        evidence = conn.query(query).df().to_dict(orient="records")
+        if os.path.exists(parquet_file):
+            evidence = conn.query(query).df().to_dict(orient="records")
+        else:
+            evidence = []
     except Exception as e:
+        print(f"DuckDB error: {e}")
         evidence = []
         
     return {
